@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dashboard</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: white;
+}
+
+/* TOP BAR */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    background: #111827;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+
+.logo {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.logout-btn {
+    background: #ef4444;
+    border: none;
+    padding: 10px 15px;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.logout-btn:hover {
+    opacity: 0.8;
+}
+
+/* MAIN CONTENT */
+.container {
+    padding: 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+/* CARD */
+.card {
+    background: #111827;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+.card h2 {
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: #38bdf8;
+}
+
+.card p {
+    color: #d1d5db;
+    font-size: 14px;
+}
+
+/* PROFILE BOX */
+.profile {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.avatar {
+    width: 80px;
+    height: 80px;
+    background: #3b82f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 10px;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <div class="logo">Student Management System</div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
+
+<!-- PROFILE -->
+<div class="profile">
+    <div class="avatar" id="avatar">U</div>
+    <h2 id="username">Loading...</h2>
+    <p id="email">Loading...</p>
+</div>
+
+<!-- DASHBOARD CARDS -->
+<div class="container">
+    <div class="card">
+        <h2>📚 Courses</h2>
+        <p>Manage and view your enrolled courses.</p>
+    </div>
+
+    <div class="card">
+        <h2>📝 Assignments</h2>
+        <p>Check your pending assignments and submissions.</p>
+    </div>
+
+    <div class="card">
+        <h2>📊 Progress</h2>
+        <p>Track your learning progress and performance.</p>
+    </div>
+
+    <div class="card">
+        <h2>⚙ Settings</h2>
+        <p>Update your account settings and preferences.</p>
+    </div>
+</div>
+
+<script>
+// ===============================
+// CHECK LOGIN SESSION
+// ===============================
+async function loadUser() {
+    try {
+        const res = await fetch("http://localhost:3000/dashboard", {
+            credentials: "include"
+        });
+
+        if (!res.ok) {
+            window.location.href = "login.html";
+            return;
+        }
+
+        const data = await res.json();
+
+        document.getElementById("username").innerText = data.user.username || "User";
+        document.getElementById("email").innerText = data.user.email || "";
+
+        document.getElementById("avatar").innerText =
+            (data.user.username || "U").charAt(0).toUpperCase();
+
+    } catch (err) {
+        console.error(err);
+        window.location.href = "login.html";
+    }
+}
+
+// ===============================
+// LOGOUT
+// ===============================
+async function logout() {
+    await fetch("http://localhost:3000/logout", {
+        credentials: "include"
+    });
+
+    window.location.href = "login.html";
+}
+
+loadUser();
+</script>
+
+</body>
+</html>
