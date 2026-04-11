@@ -1,8 +1,8 @@
 async function login() {
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value.trim();
-
     const btn = document.getElementById("loginBtn");
+    const message = document.getElementById("message");
 
     // =========================
     // VALIDATION
@@ -12,11 +12,11 @@ async function login() {
     }
 
     if (username.length < 3) {
-        return showMessage("Username must be at least 3 characters");
+        return showMessage("Username too short ❌");
     }
 
     if (password.length < 6) {
-        return showMessage("Password must be at least 6 characters");
+        return showMessage("Password must be at least 6 characters ❌");
     }
 
     try {
@@ -25,26 +25,32 @@ async function login() {
 
         const res = await fetch("http://localhost:3000/login", {
             method: "POST",
-            credentials: "include", // ✅ VERY IMPORTANT
-            headers: { "Content-Type": "application/json" },
+            credentials: "include", // 🔥 IMPORTANT FOR SESSION
+            headers: {
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({ username, password })
         });
 
         const data = await res.json();
 
-        if (res.ok) {
-            showMessage("Login successful ✅", "green");
-
-            setTimeout(() => {
-                window.location.href = "dashboard.html";
-            }, 1000);
-        } else {
-            showMessage(data.message || "Login failed ❌");
+        if (!res.ok) {
+            return showMessage(data.message || "Login failed ❌");
         }
 
-    } catch (error) {
-        console.error(error);
-        showMessage("Server error. Try again later ❌");
+        // =========================
+        // SUCCESS
+        // =========================
+        showMessage("Login successful ✅", "green");
+
+        setTimeout(() => {
+            // 🔥 FIX: MUST go through Express route
+            window.location.href = "/dashboard-page";
+        }, 800);
+
+    } catch (err) {
+        console.error(err);
+        showMessage("Server error ❌ Try again later");
     } finally {
         btn.innerText = "Login";
         btn.disabled = false;
@@ -52,7 +58,7 @@ async function login() {
 }
 
 // =========================
-// MESSAGE FUNCTION (BETTER UX)
+// MESSAGE FUNCTION
 // =========================
 function showMessage(msg, color = "red") {
     const box = document.getElementById("message");
@@ -61,7 +67,7 @@ function showMessage(msg, color = "red") {
 }
 
 // =========================
-// OAUTH BUTTONS (CONNECTED)
+// OAUTH LOGIN
 // =========================
 function googleLogin() {
     window.location.href = "http://localhost:3000/auth/google";

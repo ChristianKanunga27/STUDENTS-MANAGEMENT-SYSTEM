@@ -11,6 +11,7 @@ body {
     color: white;
 }
 
+/* HEADER */
 header {
     background: #111827;
     padding: 15px;
@@ -19,10 +20,12 @@ header {
     font-weight: bold;
 }
 
+/* CONTAINER */
 .container {
     padding: 20px;
 }
 
+/* TABLE */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -41,6 +44,32 @@ th {
 
 tr:hover {
     background: #111827;
+}
+
+/* BUTTONS */
+.btn {
+    padding: 6px 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.delete {
+    background: #ef4444;
+    color: white;
+}
+
+.promote {
+    background: #22c55e;
+    color: white;
+}
+
+.refresh {
+    background: #3b82f6;
+    color: white;
+    margin-bottom: 10px;
 }
 
 .badge {
@@ -62,63 +91,31 @@ tr:hover {
 <body>
 
 <header>
-    ADMIN DASHBOARD 👑
+    👑 ADMIN DASHBOARD
 </header>
 
 <div class="container">
-    <h3>All Users</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Provider</th>
-                <th>Role</th>
-            </tr>
-        </thead>
-        <tbody id="usersTable"></tbody>
-    </table>
+
+<button class="btn refresh" onclick="loadUsers()">🔄 Refresh</button>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Provider</th>
+            <th>Role</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <tbody id="usersTable"></tbody>
+</table>
+
 </div>
 
-<script>
-async function loadUsers() {
-    try {
-        const res = await fetch("http://localhost:3000/admin/users", {
-            credentials: "include"
-        });
-
-        if (!res.ok) {
-            alert("Access denied (Admin only)");
-            window.location.href = "/login";
-            return;
-        }
-
-        const users = await res.json();
-
-        const table = document.getElementById("usersTable");
-
-        table.innerHTML = users.map(u => `
-            <tr>
-                <td>${u.id}</td>
-                <td>${u.username}</td>
-                <td>${u.email}</td>
-                <td>${u.provider || "local"}</td>
-                <td>
-                    <span class="badge ${u.role === "admin" ? "admin" : "user"}">
-                        ${u.role || "user"}
-                    </span>
-                </td>
-            </tr>
-        `).join("");
-
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-loadUsers();
-</script>
+<script src="admin.js"></script>
 
 </body>
 </html>

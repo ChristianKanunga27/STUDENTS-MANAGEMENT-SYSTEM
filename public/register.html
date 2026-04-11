@@ -1,44 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Register</title>
 
 <style>
-body {
+* {
     margin: 0;
-    font-family: Arial;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* BACKGROUND */
+body {
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
     color: white;
-    padding: 15px;
+    padding: 20px;
 }
 
 /* CARD */
 .card {
     width: 100%;
-    max-width: 380px;
+    max-width: 400px;
     background: #111827;
     padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
     align-items: center;
-    animation: fadeIn 0.5s ease;
+    animation: fadeIn 0.6s ease;
 }
 
+/* ANIMATION */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px);}
-    to { opacity: 1; transform: translateY(0);}
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
+/* TITLE */
 h2 {
     text-align: center;
     margin-bottom: 10px;
-    font-size: 22px;
+    font-size: 24px;
 }
 
 /* MESSAGE */
@@ -47,6 +57,7 @@ h2 {
     font-size: 13px;
     margin-bottom: 10px;
     text-align: center;
+    color: #fbbf24;
 }
 
 /* INPUTS */
@@ -55,7 +66,7 @@ input {
     padding: 12px;
     margin: 8px 0;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     outline: none;
     background: #1f2937;
     color: white;
@@ -65,6 +76,7 @@ input {
 
 input:focus {
     background: #374151;
+    transform: scale(1.01);
 }
 
 /* BUTTON BASE */
@@ -73,17 +85,16 @@ button {
     padding: 12px;
     margin-top: 10px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
+    font-size: 14px;
     transition: 0.3s;
 
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-
-    font-size: 14px;
 }
 
 button:hover {
@@ -96,7 +107,7 @@ button:disabled {
     cursor: not-allowed;
 }
 
-/* COLORS */
+/* BUTTON COLORS */
 .register-btn {
     background: #22c55e;
     color: white;
@@ -121,7 +132,7 @@ button:disabled {
 
 /* DIVIDER */
 .divider {
-    margin: 12px 0;
+    margin: 15px 0;
     font-size: 12px;
     color: #9ca3af;
 }
@@ -129,13 +140,40 @@ button:disabled {
 /* LINK */
 .link {
     text-align: center;
-    margin-top: 12px;
+    margin-top: 15px;
     font-size: 14px;
 }
 
 .link a {
     color: #38bdf8;
     text-decoration: none;
+}
+
+.link a:hover {
+    text-decoration: underline;
+}
+
+/* 📱 MOBILE */
+@media (max-width: 480px) {
+    .card {
+        padding: 20px;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    input, button {
+        font-size: 13px;
+        padding: 10px;
+    }
+}
+
+/* 📱 VERY SMALL SCREENS */
+@media (max-width: 320px) {
+    .card {
+        padding: 15px;
+    }
 }
 </style>
 
@@ -146,7 +184,6 @@ button:disabled {
 <div class="card">
     <h2>Create Account</h2>
 
-    <!-- MESSAGE BOX -->
     <div id="message"></div>
 
     <input type="text" id="username" placeholder="Username">
@@ -154,7 +191,7 @@ button:disabled {
     <input type="password" id="password" placeholder="Password">
     <input type="password" id="confirmPassword" placeholder="Confirm Password">
 
-    <button id="registerBtn" class="register-btn" onclick="register()">
+    <button class="register-btn" onclick="register()">
         Register
     </button>
 
@@ -177,7 +214,7 @@ button:disabled {
     </button>
 
     <div class="link">
-        Already have account? <a href="login.html">Login</a>
+        Already have an account? <a href="login.html">Login</a>
     </div>
 </div>
 

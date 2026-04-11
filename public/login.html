@@ -1,71 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login</title>
 
 <style>
-body {
+* {
     margin: 0;
-    font-family: Arial;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* Background */
+body {
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
     color: white;
+    padding: 20px;
 }
 
+/* Card */
 .card {
-    width: 360px;
+    width: 100%;
+    max-width: 380px;
     background: #111827;
     padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     animation: fadeIn 0.6s ease;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px);}
-    to { opacity: 1; transform: translateY(0);}
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
+/* Title */
 h2 {
     text-align: center;
     margin-bottom: 15px;
+    font-size: 24px;
 }
 
+/* Message */
 #message {
     text-align: center;
     font-size: 14px;
     margin-bottom: 10px;
     min-height: 18px;
+    color: #fbbf24;
 }
 
+/* Inputs */
 input {
     width: 100%;
     padding: 12px;
     margin: 8px 0;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     background: #1f2937;
     color: white;
     outline: none;
     transition: 0.3s;
+    font-size: 14px;
 }
 
 input:focus {
     background: #374151;
+    transform: scale(1.01);
 }
 
+/* Buttons */
 button {
     width: 100%;
     padding: 12px;
     margin-top: 10px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
     transition: 0.3s;
+    font-size: 14px;
 }
 
 button:hover {
@@ -78,6 +98,7 @@ button:disabled {
     cursor: not-allowed;
 }
 
+/* Button styles */
 .login-btn {
     background: #3b82f6;
     color: white;
@@ -93,21 +114,52 @@ button:disabled {
     color: white;
 }
 
+/* Divider */
 .divider {
     text-align: center;
-    margin: 12px 0;
+    margin: 15px 0;
     font-size: 12px;
     color: #9ca3af;
 }
 
+/* Link */
 .link {
     text-align: center;
-    margin-top: 12px;
+    margin-top: 15px;
+    font-size: 14px;
 }
 
 .link a {
     color: #38bdf8;
     text-decoration: none;
+}
+
+.link a:hover {
+    text-decoration: underline;
+}
+
+/* 📱 MOBILE RESPONSIVE */
+@media (max-width: 480px) {
+    .card {
+        padding: 20px;
+        border-radius: 12px;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    button, input {
+        font-size: 13px;
+        padding: 10px;
+    }
+}
+
+/* 📱 VERY SMALL SCREENS */
+@media (max-width: 320px) {
+    .card {
+        padding: 15px;
+    }
 }
 </style>
 
@@ -118,7 +170,6 @@ button:disabled {
 <div class="card">
     <h2>Welcome Back</h2>
 
-    <!-- MESSAGE BOX -->
     <div id="message"></div>
 
     <input type="text" id="username" placeholder="Username">
