@@ -1,121 +1,314 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Admin Dashboard</title>
 
 <style>
-body {
-    margin: 0;
-    font-family: Arial;
-    background: #0f172a;
-    color: white;
+:root{
+    --bg:#0f172a;
+    --panel:#111827;
+    --card:#1f2937;
+    --text:#e5e7eb;
+    --muted:#9ca3af;
+    --primary:#3b82f6;
+    --danger:#ef4444;
+    --success:#22c55e;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    display:flex;
+    min-height:100vh;
+}
+
+/* SIDEBAR */
+.sidebar{
+    width:250px;
+    background:var(--panel);
+    padding:20px;
+    position:fixed;
+    height:100%;
+    left:0;
+    top:0;
+    transition:0.3s;
+    z-index:1000;
+}
+
+.sidebar h2{
+    margin-bottom:20px;
+}
+
+.nav a{
+    display:block;
+    padding:10px;
+    color:var(--text);
+    text-decoration:none;
+    border-radius:6px;
+    margin-bottom:5px;
+}
+
+.nav a:hover{
+    background:var(--card);
+}
+
+/* MAIN */
+.main{
+    margin-left:250px;
+    width:100%;
+    padding:20px;
 }
 
 /* HEADER */
-header {
-    background: #111827;
-    padding: 15px;
-    text-align: center;
-    font-size: 20px;
-    font-weight: bold;
+header{
+    background:var(--panel);
+    padding:15px;
+    border-radius:10px;
+    display:flex;
+    justify-content:space-between;
 }
 
-/* CONTAINER */
-.container {
-    padding: 20px;
+/* CARDS */
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:15px;
+    margin-top:20px;
+}
+
+.card{
+    background:var(--card);
+    padding:15px;
+    border-radius:10px;
 }
 
 /* TABLE */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
+.table-container{
+    margin-top:20px;
+    background:var(--panel);
+    padding:15px;
+    border-radius:10px;
+    overflow-x:auto;
 }
 
-th, td {
-    padding: 12px;
-    border: 1px solid #1f2937;
-    text-align: left;
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:600px;
 }
 
-th {
-    background: #1f2937;
-}
-
-tr:hover {
-    background: #111827;
+th,td{
+    padding:10px;
+    border-bottom:1px solid #374151;
 }
 
 /* BUTTONS */
-.btn {
-    padding: 6px 10px;
-    border: none;
-    cursor: pointer;
-    border-radius: 6px;
-    font-weight: bold;
-    margin-right: 5px;
+.btn{
+    padding:6px 10px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:12px;
 }
 
-.delete {
-    background: #ef4444;
-    color: white;
+.delete{background:var(--danger); color:white;}
+.add{background:var(--success); color:white;}
+.refresh{background:var(--primary); color:white;}
+
+/* MENU */
+.menu-btn{
+    display:none;
+    position:fixed;
+    top:15px;
+    left:15px;
+    z-index:1200;
+    background:var(--primary);
+    color:white;
+    padding:10px;
+    border:none;
+    border-radius:6px;
+    font-size:18px;
 }
 
-.promote {
-    background: #22c55e;
-    color: white;
+.overlay{
+    position:fixed;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.5);
+    display:none;
+    z-index:900;
 }
 
-.refresh {
-    background: #3b82f6;
-    color: white;
-    margin-bottom: 10px;
-}
+/* MOBILE */
+@media(max-width:768px){
+    .menu-btn{display:block;}
 
-.badge {
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-}
+    .sidebar{
+        left:-260px;
+    }
 
-.admin {
-    background: red;
-}
+    .sidebar.active{
+        left:0;
+    }
 
-.user {
-    background: green;
+    .overlay.active{
+        display:block;
+    }
+
+    .main{
+        margin-left:0;
+        padding-top:70px;
+    }
 }
 </style>
 </head>
 
 <body>
 
+<!-- MENU -->
+<button class="menu-btn" onclick="toggleSidebar()">☰</button>
+<div class="overlay" onclick="toggleSidebar()"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <h2>👑 Admin Panel</h2>
+    <div class="nav">
+        <a href="#" onclick="showSection('dashboard')">Dashboard</a>
+        <a href="#" onclick="showSection('attendance')">Attendance</a>
+        <a href="#" onclick="showSection('quiz')">Quiz</a>
+        <a href="#">Users</a>
+        <a href="#">Settings</a>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
 <header>
-    👑 ADMIN DASHBOARD
+    <h2 id="title">Dashboard</h2>
+    <button class="btn refresh">🔄 Refresh</button>
 </header>
 
-<div class="container">
+<!-- DASHBOARD -->
+<div id="dashboard" class="section">
+    <div class="cards">
+        <div class="card">
+            <h3>Total Users</h3>
+            <p>120</p>
+        </div>
+        <div class="card">
+            <h3>Admins</h3>
+            <p>5</p>
+        </div>
+        <div class="card">
+            <h3>Attendance Today</h3>
+            <p>85%</p>
+        </div>
+    </div>
+</div>
 
-<button class="btn refresh" onclick="loadUsers()">🔄 Refresh</button>
+<!-- ATTENDANCE -->
+<div id="attendance" class="section" style="display:none;">
+    <h3>📅 Attendance Management</h3>
 
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Provider</th>
-            <th>Role</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>John</td>
+                    <td>2026-04-12</td>
+                    <td>Present</td>
+                    <td><button class="btn delete">Remove</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 
-    <tbody id="usersTable"></tbody>
-</table>
+<!-- QUIZ -->
+<div id="quiz" class="section" style="display:none;">
+    <h3>📝 Quiz Management</h3>
+
+    <button class="btn add" onclick="addQuiz()">+ Add Quiz</button>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Question</th>
+                    <th>Option A</th>
+                    <th>Option B</th>
+                    <th>Answer</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="quizTable">
+                <tr>
+                    <td>What is HTML?</td>
+                    <td>Language</td>
+                    <td>Database</td>
+                    <td>Language</td>
+                    <td><button class="btn delete">Delete</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 
 </div>
 
-<script src="admin.js"></script>
+<script>
+
+/* SIDEBAR */
+function toggleSidebar(){
+    document.getElementById("sidebar").classList.toggle("active");
+    document.querySelector(".overlay").classList.toggle("active");
+}
+
+/* NAVIGATION */
+function showSection(section){
+
+    document.querySelectorAll(".section").forEach(s=>{
+        s.style.display="none";
+    });
+
+    document.getElementById(section).style.display="block";
+    document.getElementById("title").innerText = section.toUpperCase();
+}
+
+/* QUIZ ADD */
+function addQuiz(){
+    const table = document.getElementById("quizTable");
+
+    table.innerHTML += `
+        <tr>
+            <td>New Question</td>
+            <td>Option A</td>
+            <td>Option B</td>
+            <td>Answer</td>
+            <td><button class="btn delete">Delete</button></td>
+        </tr>
+    `;
+}
+
+</script>
 
 </body>
-</html>
+</html> 
