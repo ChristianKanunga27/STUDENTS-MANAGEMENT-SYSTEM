@@ -1,8 +1,10 @@
+// =========================
+// LOGIN FUNCTION
+// =========================
 async function login() {
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value.trim();
     const btn = document.getElementById("loginBtn");
-    const message = document.getElementById("message");
 
     // =========================
     // VALIDATION
@@ -25,7 +27,7 @@ async function login() {
 
         const res = await fetch("http://localhost:3000/login", {
             method: "POST",
-            credentials: "include", // 🔥 IMPORTANT FOR SESSION
+            credentials: "include", // session support
             headers: {
                 "Content-Type": "application/json"
             },
@@ -34,6 +36,9 @@ async function login() {
 
         const data = await res.json();
 
+        // =========================
+        // ERROR HANDLING
+        // =========================
         if (!res.ok) {
             return showMessage(data.message || "Login failed ❌");
         }
@@ -44,13 +49,16 @@ async function login() {
         showMessage("Login successful ✅", "green");
 
         setTimeout(() => {
-            // 🔥 FIX: MUST go through Express route
-            window.location.href = "/dashboard-page";
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                window.location.href = "/dashboard.html"; // FIXED fallback
+            }
         }, 800);
 
     } catch (err) {
-        console.error(err);
-        showMessage("Server error ❌ Try again later");
+        console.error("LOGIN ERROR:", err);
+        showMessage("Server error, try again later ❌");
     } finally {
         btn.innerText = "Login";
         btn.disabled = false;
@@ -64,6 +72,15 @@ function showMessage(msg, color = "red") {
     const box = document.getElementById("message");
     box.innerText = msg;
     box.style.color = color;
+}
+
+// =========================
+// FORGOT PASSWORD NAVIGATION ✅ FIXED
+// =========================
+function goToForgotPassword() {
+    // since login.html is in /public
+    // and forgot.html is in /password
+    window.location.href = "../password/forgot.html";
 }
 
 // =========================

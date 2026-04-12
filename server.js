@@ -1,4 +1,6 @@
-//IMPORT IMPORTANT MODULE
+// ===============================
+// IMPORTS
+// ===============================
 require("dotenv").config();
 
 const express = require("express");
@@ -10,60 +12,61 @@ const path = require("path");
 const supabase = require("./supabase");
 
 const app = express();
- 
-// TRUST PROXY (IMPORTANT FOR SESSION)
- 
+
+// ===============================
+// TRUST PROXY
+// ===============================
 app.set("trust proxy", 1);
 
- 
+// ===============================
 // MIDDLEWARE
- 
+// ===============================
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin: true, // allow any frontend development
     credentials: true
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/password", express.static("password"));
 
- 
-// SESSION CONFIG (FIXED)
-
+// ===============================
+// SESSION CONFIG
+// ===============================
 app.use(session({
+    name: "session_id",
     secret: process.env.SESSION_SECRET || "super_secret_key",
     resave: false,
     saveUninitialized: false,
     cookie: {
         httpOnly: true,
-        secure: false, // localhost only
+        secure: false, // change to true in production (HTTPS)
         sameSite: "lax",
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
 
- 
-// DEBUG SESSION (REMOVE LATER)
- 
-app.use((req, res, next) => {
-    console.log("SESSION USER =>", req.session.user);
-    next();
-});
-
- 
+// ===============================
 // AUTH MIDDLEWARE
- 
+// ===============================
 function isAuthenticated(req, res, next) {
-    if (!req.session.user) {
-        return res.redirect("/login");
+    if (!req.session.user) return res.redirect("/login");
+    next();
+}
+
+function isAdmin(req, res, next) {
+    if (!req.session.user) return res.redirect("/login");
+    if (req.session.user.role !== "admin") {
+        return res.status(403).send("Access denied");
     }
     next();
 }
 
- 
+// ===============================
 // PAGES
- 
-app.get("/", (req, res) => res.send("SERVER RUNNING 🚀"));
+// ===============================
+app.get("/", (req, res) => res.send("SERVER RUNNING"));
 
 app.get("/login", (req, res) =>
     res.sendFile(path.join(__dirname, "public/login.html"))
@@ -77,16 +80,40 @@ app.get("/dashboard-page", isAuthenticated, (req, res) =>
     res.sendFile(path.join(__dirname, "public/dashboard.html"))
 );
 
+app.get("/admin-page", isAdmin, (req, res) =>
+    res.sendFile(path.join(__dirname, "public/admin.html"))
+);
 
+// ===============================
 // REGISTER
-
+// ===============================
 app.post("/register", async (req, res) => {
     try {
         const { username, email, password } = req.body;
 
+        if (!username || !email || !password) {
+            return res.status(400).json({ message: "All fields required" });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({ message: "Password must be at least 6 characters" });
+        }
+
+        const { data: existingUser, error: checkError } = await supabase
+            .from("student")
+            .select("*")
+            .eq("email", email)
+            .maybeSingle();
+
+        if (checkError) throw checkError;
+
+        if (existingUser) {
+            return res.status(400).json({ message: "User already exists" });
+        }
+
         const hash = await bcrypt.hash(password, 10);
 
-        const { error } = await supabase
+        const { data, error } = await supabase
             .from("student")
             .insert([{
                 username,
@@ -94,21 +121,23 @@ app.post("/register", async (req, res) => {
                 password: hash,
                 provider: "local",
                 role: "user"
-            }]);
+            }])
+            .select()
+            .single();
 
         if (error) throw error;
 
         res.json({ message: "Registered successfully" });
 
     } catch (err) {
-        console.error("REGISTER ERROR:", err.message);
-        res.status(500).json({ message: err.message });
+        console.error("REGISTER ERROR:", err);
+        res.status(500).json({ message: "Server error" });
     }
 });
 
-
+// ===============================
 // LOGIN
-
+// ===============================
 app.post("/login", async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -117,21 +146,18 @@ app.post("/login", async (req, res) => {
             .from("student")
             .select("*")
             .eq("username", username)
-            .single();
+            .maybeSingle();
 
         if (error || !data) {
             return res.status(400).json({ message: "User not found" });
         }
 
-        const ok = await bcrypt.compare(password, data.password);
+        const valid = await bcrypt.compare(password, data.password);
 
-        if (!ok) {
+        if (!valid) {
             return res.status(400).json({ message: "Wrong password" });
         }
 
-       
-        // SESSION SAVE (CRITICAL FIX)
-       
         req.session.user = {
             id: data.id,
             username: data.username,
@@ -140,30 +166,28 @@ app.post("/login", async (req, res) => {
         };
 
         req.session.save(() => {
-            res.json({
-                message: "Login success",
-                user: req.session.user
+            return res.json({
+                redirect: data.role === "admin"
+                    ? "/admin-page"
+                    : "/dashboard-page"
             });
         });
 
     } catch (err) {
-        console.error("LOGIN ERROR:", err.message);
-        res.status(500).json({ message: err.message });
+        console.error("LOGIN ERROR:", err);
+        res.status(500).json({ message: "Server error" });
     }
 });
 
-
+// ===============================
 // GOOGLE LOGIN
-
+// ===============================
 app.get("/auth/google", (req, res) => {
     const url =
         `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_REDIRECT}&response_type=code&scope=email profile`;
 
     res.redirect(url);
 });
-
-
-// GOOGLE CALLBACK (FIXED)
 
 app.get("/auth/google/callback", async (req, res) => {
     try {
@@ -190,21 +214,26 @@ app.get("/auth/google/callback", async (req, res) => {
 
         const user = userRes.data;
 
+        const { data: existingUser } = await supabase
+            .from("student")
+            .select("*")
+            .eq("email", user.email)
+            .maybeSingle();
+
+        const role = existingUser?.role || "user";
+
         const { data, error } = await supabase
             .from("student")
             .upsert([{
                 email: user.email,
                 username: user.name,
                 provider: "google",
-                role: "user"
+                role: role
             }], { onConflict: "email" })
             .select()
             .single();
 
         if (error) throw error;
-
-    
-        // SESSION FIX
 
         req.session.user = {
             id: data.id,
@@ -214,26 +243,28 @@ app.get("/auth/google/callback", async (req, res) => {
         };
 
         req.session.save(() => {
-            res.redirect("/dashboard-page");
+            return res.redirect(
+                data.role === "admin"
+                    ? "/admin-page"
+                    : "/dashboard-page"
+            );
         });
 
     } catch (err) {
-        console.error("GOOGLE ERROR:", err.response?.data || err.message);
+        console.error("GOOGLE ERROR:", err);
         res.redirect("/login");
     }
 });
 
-
+// ===============================
 // GITHUB LOGIN
-
+// ===============================
 app.get("/auth/github", (req, res) => {
     const url =
         `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&scope=user:email`;
 
     res.redirect(url);
 });
-
-// GITHUB CALLBACK (FIXED)
 
 app.get("/auth/github/callback", async (req, res) => {
     try {
@@ -260,23 +291,29 @@ app.get("/auth/github/callback", async (req, res) => {
         });
 
         const primaryEmail = emailRes.data.find(e => e.primary)?.email;
+        const email = primaryEmail || `${userRes.data.login}@github.com`;
 
-        const user = userRes.data;
+        const { data: existingUser } = await supabase
+            .from("student")
+            .select("*")
+            .eq("email", email)
+            .maybeSingle();
+
+        const role = existingUser?.role || "user";
 
         const { data, error } = await supabase
             .from("student")
             .upsert([{
-                email: primaryEmail || `${user.login}@github.com`,
-                username: user.login,
+                email,
+                username: userRes.data.login,
                 provider: "github",
-                role: "user"
+                role
             }], { onConflict: "email" })
             .select()
             .single();
 
         if (error) throw error;
 
-        // session fix
         req.session.user = {
             id: data.id,
             email: data.email,
@@ -285,32 +322,42 @@ app.get("/auth/github/callback", async (req, res) => {
         };
 
         req.session.save(() => {
-            res.redirect("/dashboard-page");
+            return res.redirect(
+                data.role === "admin"
+                    ? "/admin-page"
+                    : "/dashboard-page"
+            );
         });
 
     } catch (err) {
-        console.error("GITHUB ERROR:", err.response?.data || err.message);
+        console.error("GITHUB ERROR:", err);
         res.redirect("/login");
     }
 });
 
-//Dashboard API root
+// ===============================
+// DASHBOARD API
+// ===============================
 app.get("/dashboard", (req, res) => {
     if (!req.session.user) {
         return res.status(401).json({ message: "Not logged in" });
     }
-
     res.json(req.session.user);
 });
-//logout root
+
+// ===============================
+// LOGOUT
+// ===============================
 app.get("/logout", (req, res) => {
     req.session.destroy(() => {
         res.redirect("/login");
     });
 });
 
-//start server
+// ===============================
+// START SERVER
+// ===============================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

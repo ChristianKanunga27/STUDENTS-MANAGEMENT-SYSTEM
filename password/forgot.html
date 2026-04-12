@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login</title>
+<title>Forgot Password</title>
 
 <style>
 * {
@@ -27,7 +27,7 @@ body {
 /* Card */
 .card {
     width: 100%;
-    max-width: 380px;
+    max-width: 400px;
     background: #111827;
     padding: 25px;
     border-radius: 14px;
@@ -40,31 +40,41 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Title */
 h2 {
     text-align: center;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     font-size: 24px;
 }
 
+p {
+    text-align: center;
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 15px;
+}
+
+/* Message */
 #message {
     text-align: center;
-    font-size: 14px;
-    margin-bottom: 10px;
+    font-size: 13px;
     min-height: 18px;
+    margin-bottom: 10px;
     color: #fbbf24;
 }
 
+/* Input */
 input {
     width: 100%;
     padding: 12px;
-    margin: 8px 0;
+    margin: 10px 0;
     border: none;
     border-radius: 8px;
     background: #1f2937;
     color: white;
     outline: none;
-    transition: 0.3s;
     font-size: 14px;
+    transition: 0.3s;
 }
 
 input:focus {
@@ -72,22 +82,7 @@ input:focus {
     transform: scale(1.01);
 }
 
-/* Forgot password link */
-.forgot {
-    text-align: right;
-    margin-top: 5px;
-}
-
-.forgot a {
-    font-size: 12px;
-    color: #38bdf8;
-    text-decoration: none;
-}
-
-.forgot a:hover {
-    text-decoration: underline;
-}
-
+/* Button */
 button {
     width: 100%;
     padding: 12px;
@@ -96,8 +91,10 @@ button {
     border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
-    transition: 0.3s;
+    background: #3b82f6;
+    color: white;
     font-size: 14px;
+    transition: 0.3s;
 }
 
 button:hover {
@@ -105,52 +102,26 @@ button:hover {
     transform: scale(1.02);
 }
 
-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.login-btn {
-    background: #3b82f6;
-    color: white;
-}
-
-.google-btn {
-    background: #db4437;
-    color: white;
-}
-
-.github-btn {
-    background: #333;
-    color: white;
-}
-
-.divider {
-    text-align: center;
-    margin: 15px 0;
-    font-size: 12px;
-    color: #9ca3af;
-}
-
-.link {
+/* Back link */
+.back {
     text-align: center;
     margin-top: 15px;
-    font-size: 14px;
+    font-size: 13px;
 }
 
-.link a {
+.back a {
     color: #38bdf8;
     text-decoration: none;
 }
 
-.link a:hover {
+.back a:hover {
     text-decoration: underline;
 }
 
+/* Responsive */
 @media (max-width: 480px) {
     .card {
         padding: 20px;
-        border-radius: 12px;
     }
 
     h2 {
@@ -162,43 +133,31 @@ button:disabled {
         padding: 10px;
     }
 }
-
-@media (max-width: 320px) {
-    .card {
-        padding: 15px;
-    }
-}
 </style>
 </head>
 
 <body>
 
 <div class="card">
-    <h2>Welcome Back</h2>
+
+    <h2>Forgot Password?</h2>
+    <p>Enter your email to receive a password reset link</p>
 
     <div id="message"></div>
 
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
+    <!-- ✅ FORM (IMPORTANT FIX) -->
+    <form id="forgotForm">
+        <input type="email" id="email" placeholder="Enter your email" required>
 
-    <!-- ✅ Forgot password added here -->
-    <div class="forgot">
-        <a href="../password/forgot.html">Forgot Password?</a>
+        <button type="submit" id="sendBtn">Send Reset Link</button>
+    </form>
+
+    <div class="back">
+        Remember your password? <a href="/login.html">Login</a>
     </div>
 
-    <button id="loginBtn" class="login-btn" onclick="login()">Login</button>
-
-    <div class="divider">OR</div>
-
-    <button class="google-btn" onclick="googleLogin()">Continue with Google</button>
-    <button class="github-btn" onclick="githubLogin()">Continue with GitHub</button>
-
-    <div class="link">
-        No account? <a href="register.html">Register</a>
-    </div>
 </div>
 
-<script src="login.js"></script>
-
+<script src="forgot.js"></script>
 </body>
 </html>
