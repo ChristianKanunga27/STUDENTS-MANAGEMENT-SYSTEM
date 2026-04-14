@@ -194,7 +194,11 @@ app.post("/login", async (req, res) => {
             role: data.role || "user"
         };
 
-        req.session.save(() => {
+        req.session.save((err) => {
+            if (err) {
+                console.error("SESSION SAVE ERROR:", err);
+                return res.status(500).json({ message: "Session error" });
+            }
             return res.json({
                 redirect: data.role === "admin"
                     ? "/admin-page"
@@ -246,16 +250,21 @@ app.post("/forgot", async (req, res) => {
 
         const resetLink = `${req.protocol}://${req.get("host")}/password/reset.html?token=${resetToken}`;
 
-        await sendEmail(
-            email,
-            "Reset Your Password",
-            `
-                <h2>Password Reset Request</h2>
-                <p>Click the link below to reset your password:</p>
-                <a href="${resetLink}">Reset Password</a>
-                <p>This link expires in one hour.</p>
-            `
-        );
+        try {
+            await sendEmail(
+                email,
+                "Reset Your Password",
+                `
+                    <h2>Password Reset Request</h2>
+                    <p>Click the link below to reset your password:</p>
+                    <a href="${resetLink}">Reset Password</a>
+                    <p>This link expires in one hour.</p>
+                `
+            );
+        } catch (emailError) {
+            console.error("EMAIL SEND ERROR:", emailError);
+            // Still return success to prevent enumeration, but log the error
+        }
 
         res.json({ message: "Reset email sent successfully" });
     } catch (err) {
