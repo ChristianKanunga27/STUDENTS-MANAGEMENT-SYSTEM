@@ -29,7 +29,7 @@ async function register() {
         btn.innerText = "Creating account...";
         btn.disabled = true;
 
-        const res = await fetch("http://localhost:3000/register", { // ✅ SAME ORIGIN
+        const res = await fetch("/register", {
             method: "POST",
             credentials: "include",
             headers: {
@@ -57,4 +57,22 @@ async function register() {
         btn.innerText = "Register";
         btn.disabled = false;
     }
+}
+
+function showMessage(message, color = "#fbbf24") {
+    const box = document.getElementById("message");
+    box.innerText = message;
+    box.style.color = color;
+}
+
+function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function googleLogin() {
+    window.location.href = "/auth/google";
+}
+
+function githubLogin() {
+    window.location.href = "/auth/github";
 }

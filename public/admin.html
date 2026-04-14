@@ -124,6 +124,62 @@ th,td{
 .add{background:var(--success); color:white;}
 .refresh{background:var(--primary); color:white;}
 
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.field label {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.field input,
+.field select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #374151;
+    background: var(--card);
+    color: var(--text);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.stats-card {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.stats-card h3 {
+    margin-bottom: 12px;
+    color: var(--primary);
+}
+
+.stats-card p {
+    font-size: 14px;
+    color: var(--text);
+}
+
+.table-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.table-actions button {
+    min-width: 150px;
+}
+
 /* MENU */
 .menu-btn{
     display:none;
@@ -185,7 +241,7 @@ th,td{
         <a href="#" onclick="showSection('dashboard')">Dashboard</a>
         <a href="#" onclick="showSection('attendance')">Attendance</a>
         <a href="#" onclick="showSection('quiz')">Quiz</a>
-        <a href="#">Users</a>
+        <a href="#" onclick="showSection('users')">Users</a>
         <a href="#">Settings</a>
     </div>
 </div>
@@ -220,6 +276,27 @@ th,td{
 <div id="attendance" class="section" style="display:none;">
     <h3>📅 Attendance Management</h3>
 
+    <div class="card" style="max-width:720px; margin-top:15px;">
+        <div class="field">
+            <label for="attendanceName">Student Name</label>
+            <input type="text" id="attendanceName" placeholder="Student name">
+        </div>
+        <div class="field">
+            <label for="attendanceDate">Date</label>
+            <input type="date" id="attendanceDate">
+        </div>
+        <div class="field">
+            <label for="attendanceStatus">Status</label>
+            <select id="attendanceStatus">
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="Late">Late</option>
+            </select>
+        </div>
+        <button class="btn add" onclick="addAttendance()">Add Attendance</button>
+        <p id="attendanceMessage" style="margin-top:12px;color:#fbbf24;"></p>
+    </div>
+
     <div class="table-container">
         <table>
             <thead>
@@ -230,12 +307,9 @@ th,td{
                     <th>Action</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="attendanceTableBody">
                 <tr>
-                    <td>John</td>
-                    <td>2026-04-12</td>
-                    <td>Present</td>
-                    <td><button class="btn delete">Remove</button></td>
+                    <td colspan="4" style="color:#9ca3af;">No attendance records yet.</td>
                 </tr>
             </tbody>
         </table>
@@ -246,7 +320,26 @@ th,td{
 <div id="quiz" class="section" style="display:none;">
     <h3>📝 Quiz Management</h3>
 
-    <button class="btn add" onclick="addQuiz()">+ Add Quiz</button>
+    <div class="card" style="max-width:720px; margin-top:15px;">
+        <div class="field">
+            <label for="quizQuestion">Question</label>
+            <input type="text" id="quizQuestion" placeholder="Quiz question">
+        </div>
+        <div class="field">
+            <label for="quizOptionA">Option A</label>
+            <input type="text" id="quizOptionA" placeholder="Option A">
+        </div>
+        <div class="field">
+            <label for="quizOptionB">Option B</label>
+            <input type="text" id="quizOptionB" placeholder="Option B">
+        </div>
+        <div class="field">
+            <label for="quizAnswer">Answer</label>
+            <input type="text" id="quizAnswer" placeholder="Correct answer">
+        </div>
+        <button class="btn add" onclick="addQuizItem()">Add Quiz Item</button>
+        <p id="quizMessage" style="margin-top:12px;color:#fbbf24;"></p>
+    </div>
 
     <div class="table-container">
         <table>
@@ -259,16 +352,127 @@ th,td{
                     <th>Action</th>
                 </tr>
             </thead>
-            <tbody id="quizTable">
+            <tbody id="quizTableBody">
                 <tr>
-                    <td>What is HTML?</td>
-                    <td>Language</td>
-                    <td>Database</td>
-                    <td>Language</td>
-                    <td><button class="btn delete">Delete</button></td>
+                    <td colspan="5" style="color:#9ca3af;">No quiz items yet.</td>
                 </tr>
             </tbody>
         </table>
+    </div>
+</div>
+
+<div id="users" class="section" style="display:none;">
+    <div class="stats-grid">
+        <div class="stats-card">
+            <h3>Total Students</h3>
+            <p id="studentCount">Loading...</p>
+        </div>
+        <div class="stats-card">
+            <h3>Total Admins</h3>
+            <p id="adminCount">Loading...</p>
+        </div>
+        <div class="stats-card">
+            <h3>Average Score</h3>
+            <p id="averageScore">Loading...</p>
+        </div>
+    </div>
+
+    <div class="table-container" style="margin-top:20px;">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Marks</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="studentTableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="card" style="margin-top:20px; max-width:700px;">
+        <h3>Create Student</h3>
+        <div class="field">
+            <label for="newUsername">Username</label>
+            <input type="text" id="newUsername" placeholder="Student username">
+        </div>
+        <div class="field">
+            <label for="newEmail">Email</label>
+            <input type="email" id="newEmail" placeholder="Student email">
+        </div>
+        <div class="field">
+            <label for="newPassword">Password</label>
+            <input type="password" id="newPassword" placeholder="Password">
+        </div>
+        <div class="field">
+            <label for="newRole">Role</label>
+            <select id="newRole">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+        <button class="btn add" onclick="createStudent()">Create Student</button>
+        <p id="createStudentMessage" style="margin-top:12px;color:#fbbf24;"></p>
+    </div>
+
+    <div class="card" style="margin-top:20px; max-width:700px;">
+        <h3>Edit Student</h3>
+        <div class="field">
+            <label for="editStudentId">Selected Student ID</label>
+            <input type="text" id="editStudentId" disabled>
+        </div>
+        <div class="field">
+            <label for="editUsername">Username</label>
+            <input type="text" id="editUsername" placeholder="Username">
+        </div>
+        <div class="field">
+            <label for="editEmail">Email</label>
+            <input type="email" id="editEmail" placeholder="Email">
+        </div>
+        <div class="field">
+            <label for="editRole">Role</label>
+            <select id="editRole">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+        <div class="table-actions">
+            <button class="btn add" onclick="updateStudent()">Save Changes</button>
+            <button class="btn refresh" onclick="loadStudents()">Refresh List</button>
+        </div>
+        <p id="editStudentMessage" style="margin-top:12px;color:#fbbf24;"></p>
+    </div>
+
+    <div class="card" style="margin-top:20px; max-width:700px;">
+        <h3>Add Student Mark</h3>
+        <div class="field">
+            <label for="markStudentId">Student ID</label>
+            <input type="text" id="markStudentId" placeholder="Student ID">
+        </div>
+        <div class="field">
+            <label for="markSubject">Subject</label>
+            <input type="text" id="markSubject" placeholder="Subject name">
+        </div>
+        <div class="field">
+            <label for="markScore">Score</label>
+            <input type="number" id="markScore" placeholder="Score">
+        </div>
+        <div class="field">
+            <label for="markMaxScore">Max Score</label>
+            <input type="number" id="markMaxScore" placeholder="Max score">
+        </div>
+        <button class="btn add" onclick="addStudentMark()">Add Mark</button>
+        <p id="markMessage" style="margin-top:12px;color:#fbbf24;"></p>
+    </div>
+</div>
+
+<div id="settings" class="section" style="display:none;">
+    <div class="card">
+        <h3>Settings</h3>
+        <p>Admin settings and configuration controls will appear here.</p>
     </div>
 </div>
 

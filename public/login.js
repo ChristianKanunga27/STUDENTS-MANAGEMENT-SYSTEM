@@ -25,7 +25,7 @@ async function login() {
         btn.innerText = "Logging in...";
         btn.disabled = true;
 
-        const res = await fetch("http://localhost:3000/login", {
+        const res = await fetch("/login", {
             method: "POST",
             credentials: "include", // session support
             headers: {
@@ -40,25 +40,25 @@ async function login() {
         // ERROR HANDLING
         // =========================
         if (!res.ok) {
-            return showMessage(data.message || "Login failed ❌");
+            return showMessage(data.message || "Login failed ?");
         }
 
         // =========================
         // SUCCESS
         // =========================
-        showMessage("Login successful ✅", "green");
+        showMessage("Login successful ?", "green");
 
         setTimeout(() => {
             if (data.redirect) {
                 window.location.href = data.redirect;
             } else {
-                window.location.href = "/dashboard.html"; // FIXED fallback
+                window.location.href = "/dashboard-page"; // fallback
             }
         }, 800);
 
     } catch (err) {
         console.error("LOGIN ERROR:", err);
-        showMessage("Server error, try again later ❌");
+        showMessage("Server error, try again later ?");
     } finally {
         btn.innerText = "Login";
         btn.disabled = false;
@@ -75,7 +75,7 @@ function showMessage(msg, color = "red") {
 }
 
 // =========================
-// FORGOT PASSWORD NAVIGATION ✅ FIXED
+// FORGOT PASSWORD NAVIGATION ? FIXED
 // =========================
 function goToForgotPassword() {
     // since login.html is in /public
@@ -87,9 +87,9 @@ function goToForgotPassword() {
 // OAUTH LOGIN
 // =========================
 function googleLogin() {
-    window.location.href = "http://localhost:3000/auth/google";
+    window.location.href = "/auth/google";
 }
 
 function githubLogin() {
-    window.location.href = "http://localhost:3000/auth/github";
+    window.location.href = "/auth/github";
 }

@@ -36,8 +36,7 @@ function resetPassword() {
     message.style.color = "#fbbf24";
     message.innerText = "Updating password...";
 
-    // Send request to backend
-    fetch("http://localhost:3000/reset", {
+    fetch("/reset", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -54,7 +53,7 @@ function resetPassword() {
             message.innerText = "Password updated successfully! Redirecting...";
 
             setTimeout(() => {
-                window.location.href = "login.html";
+                window.location.href = "/login";
             }, 2000);
         } else {
             message.style.color = "red";

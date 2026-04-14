@@ -23,7 +23,7 @@ app.post("/forgot", async (req, res) => {
     try {
         // 1. Check user
         const { data: user, error } = await supabase
-            .from("users")
+            .from("student")
             .select("*")
             .eq("email", email)
             .single();
@@ -38,7 +38,7 @@ app.post("/forgot", async (req, res) => {
 
         // 3. Save token in Supabase
         await supabase
-            .from("users")
+            .from("student")
             .update({
                 reset_token: resetToken,
                 reset_token_expiry: expiry
@@ -46,7 +46,7 @@ app.post("/forgot", async (req, res) => {
             .eq("email", email);
 
         // 4. Reset link
-        const resetLink = `http://localhost:3000/reset.html?token=${resetToken}`;
+        const resetLink = `${req.protocol}://${req.get("host")}/password/reset.html?token=${resetToken}`;
 
         // 5. Send email
         await sendEmail(
@@ -78,7 +78,7 @@ app.post("/reset", async (req, res) => {
     try {
         // 1. Find user by token
         const { data: user, error } = await supabase
-            .from("users")
+            .from("student")
             .select("*")
             .eq("reset_token", token)
             .single();
@@ -97,7 +97,7 @@ app.post("/reset", async (req, res) => {
 
         // 4. Update password & clear token
         await supabase
-            .from("users")
+            .from("student")
             .update({
                 password: hashedPassword,
                 reset_token: null,
