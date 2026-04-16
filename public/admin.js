@@ -162,6 +162,28 @@ function fillResultStudent(id) {
     setMessage("resultMessage", "", "#fbbf24");
 }
 
+function populateResultCourseOptions() {
+    const select = document.getElementById("resultCourseName");
+    if (!select) return;
+
+    const currentValue = select.value;
+    const sortedCourses = courses
+        .slice()
+        .sort((a, b) => String(getValue(a, ["courseName", "course_name"], "")).localeCompare(String(getValue(b, ["courseName", "course_name"], ""))));
+
+    select.innerHTML = `
+        <option value="">Select course</option>
+        ${sortedCourses.map(course => {
+            const courseName = getValue(course, ["courseName", "course_name", "title", "name"], "");
+            return `<option value="${courseName}">${courseName}</option>`;
+        }).join("")}
+    `;
+
+    if (sortedCourses.some(course => getValue(course, ["courseName", "course_name", "title", "name"], "") === currentValue)) {
+        select.value = currentValue;
+    }
+}
+
 async function createStudent() {
     const username = document.getElementById("newUsername").value.trim();
     const email = document.getElementById("newEmail").value.trim().toLowerCase();
@@ -244,11 +266,12 @@ async function updateStudent() {
 
 async function addStudentResult() {
     const id = document.getElementById("resultStudentId").value.trim();
+    const courseName = document.getElementById("resultCourseName").value.trim();
     const marks = document.getElementById("resultMarks").value;
     const grade = document.getElementById("resultGrade").value.trim();
 
-    if (!id || marks === "" || !grade) {
-        setMessage("resultMessage", "Student id, marks, and grade are required.", "#ef4444");
+    if (!id || !courseName || marks === "" || !grade) {
+        setMessage("resultMessage", "Student id, course, marks, and grade are required.", "#ef4444");
         return;
     }
 
@@ -261,7 +284,7 @@ async function addStudentResult() {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ marks: Number(marks), grade })
+            body: JSON.stringify({ courseName, marks: Number(marks), grade })
         });
 
         const data = await readJson(res);
@@ -271,6 +294,7 @@ async function addStudentResult() {
         }
 
         setMessage("resultMessage", data.message || "Result added successfully.", "#22c55e");
+        document.getElementById("resultCourseName").value = "";
         document.getElementById("resultMarks").value = "";
         document.getElementById("resultGrade").value = "";
         await loadStudents();
@@ -405,9 +429,11 @@ async function loadCourses() {
         }
 
         courses = Array.isArray(data.courses) ? data.courses : [];
+        populateResultCourseOptions();
         renderCourseTable();
     } catch (error) {
         console.error("LOAD COURSES ERROR:", error);
+        populateResultCourseOptions();
         if (tableBody) {
             tableBody.innerHTML = `<tr><td colspan="4">Server error loading courses.</td></tr>`;
         }

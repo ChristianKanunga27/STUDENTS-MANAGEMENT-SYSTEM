@@ -263,16 +263,101 @@ function getField(record, keys, fallback = null) {
     return fallback;
 }
 
+function formatAdminWriteError(error) {
+    const details = [error?.message, error?.details, error?.hint].filter(Boolean).join(" | ");
+    const lower = details.toLowerCase();
+
+    if (lower.includes("row-level security policy")) {
+        return "Supabase RLS blocked this admin write. Add the real SUPABASE_SERVICE_ROLE_KEY to .env and restart the server.";
+    }
+
+    return details || "Server error";
+}
+
 function normalizeResultRecord(record) {
     return {
         id: getField(record, ["id"]),
         studentId: String(getField(record, ["student_id", "user_id", "studentId", "userId"], "")),
         studentEmail: String(getField(record, ["student_email", "email", "studentEmail"], "")).toLowerCase(),
         studentName: getField(record, ["student_name", "name", "username", "studentName"], ""),
+        courseName: getField(record, ["course_name", "courseName", "course"], ""),
         marks: Number(getField(record, ["marks", "score", "result_score"], 0)) || 0,
         grade: getField(record, ["grade", "result_grade"], ""),
+        gpaPoints: Number(getField(record, ["gpa_points", "gpaPoints"], 0)) || 0,
         date: getField(record, ["created_at", "date", "createdAt"], new Date().toISOString())
     };
+}
+
+function normalizeStoredMarks(records) {
+    if (!Array.isArray(records)) return [];
+
+    return records.map(record => ({
+        id: getField(record, ["id"]),
+        studentId: String(getField(record, ["student_id", "user_id", "studentId", "userId"], "")),
+        studentEmail: String(getField(record, ["student_email", "email", "studentEmail"], "")).toLowerCase(),
+        studentName: getField(record, ["student_name", "name", "username", "studentName"], ""),
+        courseName: getField(record, ["course_name", "courseName", "course"], ""),
+        marks: Number(getField(record, ["marks", "score", "result_score"], 0)) || 0,
+        grade: getField(record, ["grade", "result_grade"], ""),
+        gpaPoints: Number(getField(record, ["gpa_points", "gpaPoints"], 0)) || 0,
+        date: getField(record, ["created_at", "date", "createdAt"], new Date().toISOString())
+    }));
+}
+
+function calculateGpaPoints(marks, grade = "") {
+    const numericMarks = Number(marks);
+    const normalizedGrade = String(grade || "").trim().toUpperCase();
+    const gradeScale = {
+        "A+": 5,
+        "A": 5,
+        "A-": 4.5,
+        "B+": 4,
+        "B": 3.5,
+        "B-": 3,
+        "C+": 2.5,
+        "C": 2,
+        "C-": 1.5,
+        "D": 1,
+        "E": 0.5,
+        "F": 0
+    };
+
+    if (normalizedGrade && gradeScale[normalizedGrade] != null) {
+        return gradeScale[normalizedGrade];
+    }
+
+    if (Number.isNaN(numericMarks)) return 0;
+    if (numericMarks >= 80) return 5;
+    if (numericMarks >= 70) return 4;
+    if (numericMarks >= 60) return 3;
+    if (numericMarks >= 50) return 2;
+    if (numericMarks >= 40) return 1;
+    return 0;
+}
+
+function mergeResultsWithFallback(primaryResults, fallbackResults) {
+    const normalizedPrimary = normalizeStoredMarks(primaryResults);
+    const normalizedFallback = normalizeStoredMarks(fallbackResults);
+    const merged = [];
+    const seen = new Set();
+
+    for (const item of [...normalizedFallback, ...normalizedPrimary]) {
+        const key = [
+            item.courseName || "",
+            item.marks,
+            item.grade || "",
+            new Date(item.date).toISOString()
+        ].join("|");
+
+        if (seen.has(key)) continue;
+        seen.add(key);
+        merged.push({
+            ...item,
+            gpaPoints: item.gpaPoints || calculateGpaPoints(item.marks, item.grade)
+        });
+    }
+
+    return merged.sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
 function normalizeAttendanceRecord(record) {
@@ -669,7 +754,7 @@ app.get("/admin/students", isAdmin, async (req, res) => {
 
             return {
                 ...rest,
-                marks: studentResults.length ? studentResults : fallbackMarks
+                marks: mergeResultsWithFallback(studentResults, fallbackMarks)
             };
         });
 
@@ -750,17 +835,17 @@ app.patch("/admin/students/:id", isAdmin, async (req, res) => {
         res.json({ success: true, message: "Student updated successfully" });
     } catch (err) {
         console.error("UPDATE STUDENT ERROR:", err);
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: formatAdminWriteError(err) });
     }
 });
 
 app.post("/admin/students/:id/marks", isAdmin, async (req, res) => {
     try {
         const id = req.params.id;
-        const { marks: resultMarks, grade } = req.body;
+        const { marks: resultMarks, grade, courseName } = req.body;
 
-        if (!id || resultMarks == null || !grade) {
-            return res.status(400).json({ message: "Student id, marks, and grade are required" });
+        if (!id || resultMarks == null || !grade || !courseName) {
+            return res.status(400).json({ message: "Student id, course, marks, and grade are required" });
         }
 
         const { data: student, error: studentError } = await supabase
@@ -774,7 +859,20 @@ app.post("/admin/students/:id/marks", isAdmin, async (req, res) => {
             return res.status(404).json({ message: "Student not found" });
         }
 
+        const normalizedCourseName = String(courseName).trim();
+        const availableCourses = await fetchAllFromTable("course").then(rows => rows.map(normalizeCourseRecord)).catch(() => []);
+        const matchedCourse = availableCourses.find(course =>
+            String(course.courseName || "").trim().toLowerCase() === normalizedCourseName.toLowerCase()
+        );
+
+        if (!matchedCourse) {
+            return res.status(400).json({ message: "Selected course was not found. Please create the course first." });
+        }
+
         const resultDate = new Date().toISOString();
+        const normalizedMarks = Number(resultMarks);
+        const normalizedGrade = String(grade).trim().toUpperCase();
+        const gpaPoints = calculateGpaPoints(normalizedMarks, normalizedGrade);
 
         try {
             await runWithTableAliases("result", async (tableName) => {
@@ -782,8 +880,8 @@ app.post("/admin/students/:id/marks", isAdmin, async (req, res) => {
                     .from(tableName)
                     .insert({
                         student_id: Number(student.id),
-                        marks: Number(resultMarks),
-                        grade,
+                        marks: normalizedMarks,
+                        grade: normalizedGrade,
                         created_at: resultDate
                     })
                     .select()
@@ -792,8 +890,6 @@ app.post("/admin/students/:id/marks", isAdmin, async (req, res) => {
                 if (response.error) throw response.error;
                 return response;
             });
-
-            return res.json({ success: true, message: "Result added successfully" });
         } catch (resultInsertError) {
             console.error("RESULT INSERT WARNING:", resultInsertError);
         }
@@ -812,15 +908,21 @@ app.post("/admin/students/:id/marks", isAdmin, async (req, res) => {
             }
         }
 
-        marks.push({
-            marks: Number(resultMarks),
-            grade,
+        const normalizedStoredMarks = normalizeStoredMarks(marks).filter(item =>
+            String(item.courseName || "").trim().toLowerCase() !== normalizedCourseName.toLowerCase()
+        );
+
+        normalizedStoredMarks.push({
+            courseName: matchedCourse.courseName,
+            marks: normalizedMarks,
+            grade: normalizedGrade,
+            gpaPoints,
             date: resultDate
         });
 
         const { error: updateError } = await supabase
             .from("student")
-            .update({ marks })
+            .update({ marks: normalizedStoredMarks })
             .eq("id", id);
 
         if (updateError) throw updateError;
@@ -828,7 +930,7 @@ app.post("/admin/students/:id/marks", isAdmin, async (req, res) => {
         res.json({ success: true, message: "Result added successfully" });
     } catch (err) {
         console.error("ADD MARK ERROR:", err);
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: formatAdminWriteError(err) });
     }
 });
 
@@ -890,7 +992,7 @@ app.post("/admin/attendance", isAdmin, async (req, res) => {
         });
     } catch (err) {
         console.error("CREATE ATTENDANCE ERROR:", err);
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: formatAdminWriteError(err) });
     }
 });
 
@@ -945,7 +1047,7 @@ app.post("/admin/courses", isAdmin, async (req, res) => {
         });
     } catch (err) {
         console.error("CREATE COURSE ERROR:", err);
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: formatAdminWriteError(err) });
     }
 });
 
@@ -1014,7 +1116,7 @@ app.post("/admin/messages", isAdmin, async (req, res) => {
         });
     } catch (err) {
         console.error("CREATE MESSAGE ERROR:", err);
-        const details = [err?.message, err?.details, err?.hint].filter(Boolean).join(" | ");
+        const details = formatAdminWriteError(err);
         const attempts = Array.isArray(err?.attempts)
             ? err.attempts
                 .map(attempt => {
@@ -1026,7 +1128,7 @@ app.post("/admin/messages", isAdmin, async (req, res) => {
             : "";
 
         res.status(500).json({
-            message: details || "Server error",
+            message: details,
             debug: attempts || undefined
         });
     }
@@ -1340,7 +1442,7 @@ app.get("/dashboard", async (req, res) => {
             }
         }
 
-        const visibleResults = results.length ? results : fallbackMarks;
+        const visibleResults = mergeResultsWithFallback(results, fallbackMarks);
 
         res.json({
             ...data,

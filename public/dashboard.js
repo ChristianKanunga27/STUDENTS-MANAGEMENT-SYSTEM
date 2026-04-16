@@ -27,6 +27,41 @@ function formatAttendanceStatus(status) {
     return status ? "Present" : "Absent";
 }
 
+function calculateGpaPoints(item) {
+    const existingPoints = Number(getValue(item, ["gpaPoints", "gpa_points"], ""));
+    if (!Number.isNaN(existingPoints) && existingPoints >= 0) {
+        return existingPoints;
+    }
+
+    const grade = String(getValue(item, ["grade"], "")).trim().toUpperCase();
+    const marks = Number(getValue(item, ["marks", "score"], 0)) || 0;
+    const gradeScale = {
+        "A+": 5,
+        "A": 5,
+        "A-": 4.5,
+        "B+": 4,
+        "B": 3.5,
+        "B-": 3,
+        "C+": 2.5,
+        "C": 2,
+        "C-": 1.5,
+        "D": 1,
+        "E": 0.5,
+        "F": 0
+    };
+
+    if (grade && gradeScale[grade] != null) {
+        return gradeScale[grade];
+    }
+
+    if (marks >= 80) return 5;
+    if (marks >= 70) return 4;
+    if (marks >= 60) return 3;
+    if (marks >= 50) return 2;
+    if (marks >= 40) return 1;
+    return 0;
+}
+
 async function loadUser() {
     try {
         const res = await fetch("/dashboard", {
@@ -50,9 +85,12 @@ async function loadUser() {
 
         const totalMarks = results.reduce((sum, item) => sum + (Number(getValue(item, ["marks", "score"], 0)) || 0), 0);
         const average = results.length ? Math.round(totalMarks / results.length) : 0;
+        const totalGpaPoints = results.reduce((sum, item) => sum + calculateGpaPoints(item), 0);
+        const gpa = results.length ? (totalGpaPoints / results.length).toFixed(2) : "--";
 
         document.getElementById("resultsCount").innerText = results.length;
-        document.getElementById("averageScore").innerText = results.length ? `${average}` : "--";
+        document.getElementById("averageScore").innerText = results.length ? `${average}%` : "--";
+        document.getElementById("gpaValue").innerText = gpa;
         document.getElementById("performanceLabel").innerText =
             average >= 80 ? "Excellent"
                 : average >= 60 ? "Good"
@@ -63,16 +101,18 @@ async function loadUser() {
 
         renderRows(
             "resultsTableBody",
-            results.slice().reverse(),
+            results,
             "No results available yet.",
             item => `
                 <tr>
+                    <td>${getValue(item, ["courseName", "course_name", "course"], "-")}</td>
                     <td>${getValue(item, ["marks", "score"], "-")}</td>
                     <td>${getValue(item, ["grade"], "-")}</td>
+                    <td>${calculateGpaPoints(item).toFixed(2)}</td>
                     <td>${new Date(getValue(item, ["date", "created_at", "createdAt"], Date.now())).toLocaleDateString()}</td>
                 </tr>
             `,
-            3
+            5
         );
 
         renderRows(

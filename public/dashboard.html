@@ -199,11 +199,16 @@ body {
 
     <div class="card-grid">
         <div class="card">
-            <h2>Average Performance</h2>
+            <h2>Average Marks</h2>
             <div class="bold" id="averageScore">--%</div>
-            <p>Based on the latest results submitted by your administrator.</p>
+            <p>Based on the course results submitted by your administrator.</p>
         </div>
-    <div class="card">
+        <div class="card">
+            <h2>GPA (5.0 Scale)</h2>
+            <div class="bold" id="gpaValue">--</div>
+            <p>Your GPA is calculated from the grades saved for each course.</p>
+        </div>
+        <div class="card">
             <h2>Total Results Recorded</h2>
             <div class="bold" id="resultsCount">--</div>
             <p>Number of result entries currently available.</p>
@@ -230,14 +235,16 @@ body {
         <table>
             <thead>
                 <tr>
+                    <th>Course</th>
                     <th>Marks</th>
                     <th>Grade</th>
+                    <th>GPA Points</th>
                     <th>Date</th>
                 </tr>
             </thead>
             <tbody id="resultsTableBody">
                 <tr>
-                    <td colspan="3" style="color:#9ca3af;">Loading results...</td>
+                    <td colspan="5" style="color:#9ca3af;">Loading results...</td>
                 </tr>
             </tbody>
         </table>
