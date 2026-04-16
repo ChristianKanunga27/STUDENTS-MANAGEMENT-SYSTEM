@@ -93,3 +93,11 @@ function googleLogin() {
 function githubLogin() {
     window.location.href = "/auth/github";
 }
+
+const loginParams = new URLSearchParams(window.location.search);
+const oauthError = loginParams.get("error");
+
+if (oauthError) {
+    showMessage(oauthError, "red");
+    window.history.replaceState({}, document.title, "/login");
+}

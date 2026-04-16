@@ -144,10 +144,12 @@ button:hover {
 
     <div id="message"></div>
 
-    <input type="password" id="password" placeholder="New Password">
-    <input type="password" id="confirmPassword" placeholder="Confirm Password">
+    <form id="resetForm">
+        <input type="password" id="password" placeholder="New Password" required>
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
 
-    <button onclick="resetPassword()">Update Password</button>
+        <button type="submit" id="resetBtn">Update Password</button>
+    </form>
 
     <div class="back">
         Back to <a href="/login">Login</a>

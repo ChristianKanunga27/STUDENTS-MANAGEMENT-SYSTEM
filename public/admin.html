@@ -240,9 +240,11 @@ th,td{
     <div class="nav">
         <a href="#" onclick="showSection('dashboard')">Dashboard</a>
         <a href="#" onclick="showSection('attendance')">Attendance</a>
-        <a href="#" onclick="showSection('quiz')">Quiz</a>
+        <a href="#" onclick="showSection('courses')">Courses</a>
+        <a href="#" onclick="showSection('messages')">Messages</a>
         <a href="#" onclick="showSection('users')">Users</a>
-        <a href="#">Settings</a>
+        <a href="#" onclick="showSection('settings')">Settings</a>
+        <a href="/logout" style="color: #ef4444;">Logout</a>
     </div>
 </div>
 
@@ -259,15 +261,23 @@ th,td{
     <div class="cards">
         <div class="card">
             <h3>Total Users</h3>
-            <p>120</p>
+            <p id="dashboardStudentCount">0</p>
         </div>
         <div class="card">
             <h3>Admins</h3>
-            <p>5</p>
+            <p id="dashboardAdminCount">0</p>
         </div>
         <div class="card">
-            <h3>Attendance Today</h3>
-            <p>85%</p>
+            <h3>Attendance Records</h3>
+            <p id="dashboardAttendanceCount">0</p>
+        </div>
+        <div class="card">
+            <h3>Courses Uploaded</h3>
+            <p id="dashboardCourseCount">0</p>
+        </div>
+        <div class="card">
+            <h3>Messages Posted</h3>
+            <p id="dashboardMessageCount">0</p>
         </div>
     </div>
 </div>
@@ -278,8 +288,8 @@ th,td{
 
     <div class="card" style="max-width:720px; margin-top:15px;">
         <div class="field">
-            <label for="attendanceName">Student Name</label>
-            <input type="text" id="attendanceName" placeholder="Student name">
+            <label for="attendanceStudentId">Student ID</label>
+            <input type="number" id="attendanceStudentId" placeholder="Student id">
         </div>
         <div class="field">
             <label for="attendanceDate">Date</label>
@@ -288,9 +298,8 @@ th,td{
         <div class="field">
             <label for="attendanceStatus">Status</label>
             <select id="attendanceStatus">
-                <option value="Present">Present</option>
-                <option value="Absent">Absent</option>
-                <option value="Late">Late</option>
+                <option value="true">Present</option>
+                <option value="false">Absent</option>
             </select>
         </div>
         <button class="btn add" onclick="addAttendance()">Add Attendance</button>
@@ -301,7 +310,7 @@ th,td{
         <table>
             <thead>
                 <tr>
-                    <th>Name</th>
+                    <th>Student ID</th>
                     <th>Date</th>
                     <th>Status</th>
                     <th>Action</th>
@@ -316,45 +325,67 @@ th,td{
     </div>
 </div>
 
-<!-- QUIZ -->
-<div id="quiz" class="section" style="display:none;">
-    <h3>📝 Quiz Management</h3>
+<!-- COURSES -->
+<div id="courses" class="section" style="display:none;">
+    <h3>📚 Course Management</h3>
 
     <div class="card" style="max-width:720px; margin-top:15px;">
         <div class="field">
-            <label for="quizQuestion">Question</label>
-            <input type="text" id="quizQuestion" placeholder="Quiz question">
+            <label for="courseName">Course Name</label>
+            <input type="text" id="courseName" placeholder="Course name">
         </div>
-        <div class="field">
-            <label for="quizOptionA">Option A</label>
-            <input type="text" id="quizOptionA" placeholder="Option A">
-        </div>
-        <div class="field">
-            <label for="quizOptionB">Option B</label>
-            <input type="text" id="quizOptionB" placeholder="Option B">
-        </div>
-        <div class="field">
-            <label for="quizAnswer">Answer</label>
-            <input type="text" id="quizAnswer" placeholder="Correct answer">
-        </div>
-        <button class="btn add" onclick="addQuizItem()">Add Quiz Item</button>
-        <p id="quizMessage" style="margin-top:12px;color:#fbbf24;"></p>
+        <button class="btn add" onclick="addCourse()">Add Course</button>
+        <p id="courseMessage" style="margin-top:12px;color:#fbbf24;"></p>
     </div>
 
     <div class="table-container">
         <table>
             <thead>
                 <tr>
-                    <th>Question</th>
-                    <th>Option A</th>
-                    <th>Option B</th>
-                    <th>Answer</th>
+                    <th>Course Name</th>
+                    <th>Created</th>
                     <th>Action</th>
                 </tr>
             </thead>
-            <tbody id="quizTableBody">
+            <tbody id="courseTableBody">
                 <tr>
-                    <td colspan="5" style="color:#9ca3af;">No quiz items yet.</td>
+                    <td colspan="3" style="color:#9ca3af;">No courses uploaded yet.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MESSAGES -->
+<div id="messages" class="section" style="display:none;">
+    <h3>📢 Message Board</h3>
+
+    <div class="card" style="max-width:720px; margin-top:15px;">
+        <div class="field">
+            <label for="messageTitle">Title</label>
+            <input type="text" id="messageTitle" placeholder="Announcement title (optional)">
+        </div>
+        <div class="field">
+            <label for="messageContent">Message</label>
+            <input type="text" id="messageContent" placeholder="Write your message">
+        </div>
+        <button class="btn add" onclick="addMessageItem()">Publish Message</button>
+        <p id="messageBoardStatus" style="margin-top:12px;color:#fbbf24;"></p>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Admin</th>
+                    <th>Message</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="messageTableBody">
+                <tr>
+                    <td colspan="4" style="color:#9ca3af;">No messages uploaded yet.</td>
                 </tr>
             </tbody>
         </table>
@@ -385,7 +416,7 @@ th,td{
                     <th>Username</th>
                     <th>Email</th>
                     <th>Role</th>
-                    <th>Marks</th>
+                    <th>Results</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -447,32 +478,40 @@ th,td{
     </div>
 
     <div class="card" style="margin-top:20px; max-width:700px;">
-        <h3>Add Student Mark</h3>
+        <h3>Add Student Result</h3>
         <div class="field">
-            <label for="markStudentId">Student ID</label>
-            <input type="text" id="markStudentId" placeholder="Student ID">
+            <label for="resultStudentId">Student ID</label>
+            <input type="text" id="resultStudentId" placeholder="Student ID">
         </div>
         <div class="field">
-            <label for="markSubject">Subject</label>
-            <input type="text" id="markSubject" placeholder="Subject name">
+            <label for="resultMarks">Marks</label>
+            <input type="number" id="resultMarks" placeholder="Marks">
         </div>
         <div class="field">
-            <label for="markScore">Score</label>
-            <input type="number" id="markScore" placeholder="Score">
+            <label for="resultGrade">Grade</label>
+            <input type="text" id="resultGrade" placeholder="Grade">
         </div>
-        <div class="field">
-            <label for="markMaxScore">Max Score</label>
-            <input type="number" id="markMaxScore" placeholder="Max score">
-        </div>
-        <button class="btn add" onclick="addStudentMark()">Add Mark</button>
-        <p id="markMessage" style="margin-top:12px;color:#fbbf24;"></p>
+        <button class="btn add" onclick="addStudentResult()">Add Result</button>
+        <p id="resultMessage" style="margin-top:12px;color:#fbbf24;"></p>
     </div>
 </div>
 
 <div id="settings" class="section" style="display:none;">
-    <div class="card">
-        <h3>Settings</h3>
-        <p>Admin settings and configuration controls will appear here.</p>
+    <div class="card" style="max-width:700px;">
+        <h3>Change User Role</h3>
+        <div class="field">
+            <label for="userEmail">User Email</label>
+            <input type="email" id="userEmail" placeholder="student@example.com">
+        </div>
+        <div class="field">
+            <label for="userRole">Role</label>
+            <select id="userRole">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+        <button class="btn add" onclick="changeUserRole()">Update Role</button>
+        <p id="roleMessage" style="margin-top:12px;color:#fbbf24;"></p>
     </div>
 </div>
 

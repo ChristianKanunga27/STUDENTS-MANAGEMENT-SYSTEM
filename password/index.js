@@ -9,58 +9,97 @@ const supabase = require("../supabase");
 const sendEmail = require("./mailer");
 
 const app = express();
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
+function normalizeEmail(email = "") {
+    return email.trim().toLowerCase();
+}
+
+function buildResetLink(req, token) {
+    const appUrl = process.env.APP_URL
+        ? process.env.APP_URL.replace(/\/$/, "")
+        : `${req.protocol}://${req.get("host")}`;
+
+    return `${appUrl}/password/reset.html?token=${token}`;
+}
+
+function getResetExpiryTimestamp(value) {
+    if (!value) return null;
+    if (typeof value === "number") return value;
+
+    const parsed = new Date(value).getTime();
+    return Number.isNaN(parsed) ? null : parsed;
+}
+
 /* ===============================
    FORGOT PASSWORD
 ================================ */
 app.post("/forgot", async (req, res) => {
-    const { email } = req.body;
+    const email = normalizeEmail(req.body.email);
+
+    if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+    }
 
     try {
-        // 1. Check user
         const { data: user, error } = await supabase
             .from("student")
-            .select("*")
+            .select("id, email, username")
             .eq("email", email)
-            .single();
+            .maybeSingle();
 
-        if (error || !user) {
-            return res.status(404).json({ message: "User not found" });
-        }
+        if (error) throw error;
+        if (!user) return res.status(404).json({ message: "Email does not exist in the database" });
 
-        // 2. Create reset token
         const resetToken = crypto.randomBytes(32).toString("hex");
-        const expiry = Date.now() + 3600000; // 1 hour
+        const hashedResetToken = crypto
+            .createHash("sha256")
+            .update(resetToken)
+            .digest("hex");
+        const expiry = new Date(Date.now() + RESET_TOKEN_TTL_MS).toISOString();
 
-        // 3. Save token in Supabase
-        await supabase
+        const { error: updateError } = await supabase
             .from("student")
             .update({
-                reset_token: resetToken,
+                reset_token: hashedResetToken,
                 reset_token_expiry: expiry
             })
-            .eq("email", email);
+            .eq("id", user.id);
 
-        // 4. Reset link
-        const resetLink = `${req.protocol}://${req.get("host")}/password/reset.html?token=${resetToken}`;
+        if (updateError) throw updateError;
 
-        // 5. Send email
-        await sendEmail(
-            email,
-            "Reset Your Password",
-            `
-                <h2>Password Reset Request</h2>
-                <p>Click below to reset your password:</p>
-                <a href="${resetLink}">Reset Password</a>
-                <p>This link expires in 1 hour.</p>
-            `
-        );
+        const resetLink = buildResetLink(req, resetToken);
 
-        res.json({ message: "Reset email sent successfully" });
+        try {
+            await sendEmail(
+                email,
+                "Reset Your Password",
+                `
+                    <h2>Password Reset Request</h2>
+                    <p>Hello ${user.username || "there"},</p>
+                    <p>Click the link below to reset your password:</p>
+                    <a href="${resetLink}">Reset Password</a>
+                    <p>This link expires in one hour.</p>
+                `
+            );
+        } catch (emailError) {
+            console.log("EMAIL SEND ERROR:", emailError);
+            await supabase
+                .from("student")
+                .update({
+                    reset_token: null,
+                    reset_token_expiry: null
+                })
+                .eq("id", user.id);
+
+            return res.status(500).json({ message: "Reset email could not be sent. Please try again." });
+        }
+
+        res.json({ success: true, message: "Reset email sent successfully" });
 
     } catch (err) {
         console.log(err);
@@ -75,37 +114,48 @@ app.post("/forgot", async (req, res) => {
 app.post("/reset", async (req, res) => {
     const { token, newPassword } = req.body;
 
+    if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+
     try {
-        // 1. Find user by token
+        const hashedResetToken = crypto
+            .createHash("sha256")
+            .update(token)
+            .digest("hex");
+
         const { data: user, error } = await supabase
             .from("student")
-            .select("*")
-            .eq("reset_token", token)
-            .single();
+            .select("id, email, reset_token_expiry")
+            .eq("reset_token", hashedResetToken)
+            .maybeSingle();
 
-        if (error || !user) {
-            return res.status(400).json({ message: "Invalid token" });
-        }
+        if (error) throw error;
+        if (!user) return res.status(400).json({ message: "Invalid token" });
 
-        // 2. Check expiry
-        if (user.reset_token_expiry < Date.now()) {
+        const expiryTimestamp = getResetExpiryTimestamp(user.reset_token_expiry);
+        if (!expiryTimestamp || expiryTimestamp < Date.now()) {
             return res.status(400).json({ message: "Token expired" });
         }
 
-        // 3. Hash password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // 4. Update password & clear token
-        await supabase
+        const { error: updateError } = await supabase
             .from("student")
             .update({
                 password: hashedPassword,
                 reset_token: null,
                 reset_token_expiry: null
             })
-            .eq("email", user.email);
+            .eq("id", user.id);
 
-        res.json({ message: "Password reset successful" });
+        if (updateError) throw updateError;
+
+        res.json({ success: true, message: "Password reset successful" });
 
     } catch (err) {
         console.log(err);
