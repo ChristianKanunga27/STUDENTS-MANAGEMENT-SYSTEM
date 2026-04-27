@@ -9,6 +9,7 @@ const session = require("express-session");
 const path = require("path");
 const crypto = require("crypto");
 const supabase = require("./supabase");
+const serverless = require("serverless-http");
 const sendEmail = require("./password/mailer");
 
 const app = express();
@@ -27,7 +28,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
-app.use("/password", express.static("password"));
+app.use("/password", express.static(path.join(__dirname, "password")));
 
 
 // SESSION CONFIG
@@ -415,10 +416,10 @@ async function fetchStudentAttendance(user) {
  
 // PAGES
 
-app.get("/", (req, res) => res.send("SERVER RUNNING"));
+//app.get("/", (req, res) => res.send("SERVER RUNNING"));
 
 app.get("/login", (req, res) =>
-    res.sendFile(path.join(__dirname, "public/login.html"))
+    res.sendFile(path.join(__dirname, "public/index.html"))
 );
 
 app.get("/register", (req, res) =>
@@ -1467,8 +1468,13 @@ app.get("/logout", (req, res) => {
     });
 });
 
-// START RUNNING SERVER
+// START RUNNING SERVER (local dev only)
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(` Now Server running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== "production" || require.main === module) {
+    app.listen(PORT, () => {
+        console.log(` Now Server running on http://localhost:${PORT}`);
+    });
+}
+
+// Export for serverless (Vercel)
+module.exports = serverless(app);
