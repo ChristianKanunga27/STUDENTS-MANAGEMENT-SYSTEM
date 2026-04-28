@@ -78,9 +78,7 @@ function showMessage(msg, color = "red") {
 // FORGOT PASSWORD NAVIGATION ? FIXED
 // =========================
 function goToForgotPassword() {
-    // since index.html is in /public
-    // and forgot.html is in /password
-    window.location.href = "../password/forgot.html";
+    window.location.href = "/password/forgot.html";
 }
 
 // =========================

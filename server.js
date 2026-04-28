@@ -15,12 +15,20 @@ const sendEmail = require("./password/mailer");
 const app = express();
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
+if (!process.env.SESSION_SECRET) {
+    console.warn("WARNING: SESSION_SECRET is not set!");
+}
+
 //TRUST PROXY
 app.set("trust proxy", 1);
 
 //MIDDLEWARES
+const corsOrigin = isProd && process.env.APP_URL
+    ? process.env.APP_URL
+    : true;
+
 app.use(cors({
-    origin: true, // allow any frontend development
+    origin: corsOrigin,
     credentials: true
 }));
 
@@ -32,16 +40,19 @@ app.use("/password", express.static(path.join(__dirname, "password")));
 
 
 // SESSION CONFIG
+const isProd = process.env.NODE_ENV === "production";
 
 app.use(session({
     name: "session_id",
     secret: process.env.SESSION_SECRET || "super_secret_key",
     resave: false,
     saveUninitialized: false,
+    proxy: true, // IMPORTANT for Vercel / HTTPS proxy
+
     cookie: {
         httpOnly: true,
-        secure: false, // change to true in production (HTTPS)
-        sameSite: "lax",
+        secure: isProd, // HTTPS only in production
+        sameSite: isProd ? "none" : "lax", // REQUIRED for Google/GitHub OAuth
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
@@ -1469,12 +1480,12 @@ app.get("/logout", (req, res) => {
 });
 
 // START RUNNING SERVER (local dev only)
-const PORT = process.env.PORT || 3000;
+/*const PORT = process.env.PORT || 3000;
 if (process.env.NODE_ENV !== "production" || require.main === module) {
     app.listen(PORT, () => {
         console.log(` Now Server running on http://localhost:${PORT}`);
     });
-}
+}*/
 
 // Export for serverless (Vercel)
 module.exports = serverless(app);
