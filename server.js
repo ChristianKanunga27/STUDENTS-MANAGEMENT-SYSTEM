@@ -15,8 +15,10 @@ const sendEmail = require("./password/mailer");
 const app = express();
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
+const isProd = process.env.NODE_ENV === "production";
+
 if (!process.env.SESSION_SECRET) {
-    console.warn("WARNING: SESSION_SECRET is not set!");
+    throw new Error("SESSION_SECRET is required in production");
 }
 
 //TRUST PROXY
@@ -40,11 +42,10 @@ app.use("/password", express.static(path.join(__dirname, "password")));
 
 
 // SESSION CONFIG
-const isProd = process.env.NODE_ENV === "production";
 
 app.use(session({
     name: "session_id",
-    secret: process.env.SESSION_SECRET || "super_secret_key",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     proxy: true, // IMPORTANT for Vercel / HTTPS proxy
@@ -134,7 +135,7 @@ function createPasswordResetToken(user) {
     })).toString("base64url");
 
     const signature = crypto
-        .createHmac("sha256", process.env.SESSION_SECRET || "super_secret_key")
+        .createHmac("sha256", process.env.SESSION_SECRET)
         .update(payload)
         .digest("base64url");
 
@@ -148,7 +149,7 @@ function verifyPasswordResetToken(token) {
 
     const [payload, signature] = token.split(".");
     const expectedSignature = crypto
-        .createHmac("sha256", process.env.SESSION_SECRET || "super_secret_key")
+        .createHmac("sha256", process.env.SESSION_SECRET)
         .update(payload)
         .digest("base64url");
 

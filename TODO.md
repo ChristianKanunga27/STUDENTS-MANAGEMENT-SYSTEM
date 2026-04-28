@@ -1,13 +1,13 @@
-# TODO: Prepare project for Vercel deployment
+# Fix Plan for server.js bugs
 
-## Steps
+## Step 1: Move isProd definition to top
+- Move `const isProd = process.env.NODE_ENV === "production";` to the top before `const corsOrigin`.
 
-- [x] Rename `public/login.js` to `public/index.js`
-- [x] Update comment inside renamed `public/index.js`
-- [x] Update `public/register.html` login link
-- [ ] Update `server.js` to export serverless handler + conditional local server
-- [ ] Fix `password` static path to use `__dirname`
-- [ ] Create `vercel.json` with build & route configuration
-- [ ] Add `start` script to `package.json`
-- [ ] Clean up duplicate `.env` entry in `.gitignore`
+## Step 2: Replace SESSION_SECRET fallback with required check
+- Replace the `console.warn` block with `throw new Error("SESSION_SECRET is required in production")`.
+- Replace `secret: process.env.SESSION_SECRET || "super_secret_key",` with `secret: process.env.SESSION_SECRET,`.
+
+## Step 3: Fix createHmac fallback strings
+- In `createPasswordResetToken`, replace `.createHmac("sha256", process.env.SESSION_SECRET || "super_secret_key")` with `.createHmac("sha256", process.env.SESSION_SECRET)`.
+- In `verifyPasswordResetToken`, replace the same pattern.
 
